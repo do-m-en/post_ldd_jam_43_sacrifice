@@ -24,12 +24,12 @@ void Property_move::update(entt::Registry<std::uint32_t>& registry, std::chrono:
       registry.destroy(entity);
     else
     {
-      auto end = std::chrono::high_resolution_clock::now();
+      move.elapsed_ += delta;
 
       using namespace std::chrono_literals;
-      if((end - move.start_) > 0.2s)
+      if(move.elapsed_ > 0.2s)
       {
-        move.start_ = end;
+        move.elapsed_ = 0s;
 
         auto& material = view.get<Material>(entity);
         material.set("layer", (material.get<int>("layer") + 1) % 2);

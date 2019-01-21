@@ -616,10 +616,10 @@ void Level_sacrifice::update(seconds_f delta)
   {
     if(victory_counter_ < 20)
     {
-      if(Property_god_demand::update(registry_, delta, demand_positions_))
+      if(Property_god_demand::update(registry_, delta, demand_positions_)
+        && Property_fall::update(registry_, delta))
       {
         Property_move::update(registry_, delta);
-        Property_fall::update(registry_, delta);
         Spawner::spawn_animal(delta, *this);
         Spawner::spawn_god_demand(delta, *this);
       }

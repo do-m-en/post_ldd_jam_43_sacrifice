@@ -10,7 +10,7 @@ namespace cxx_gd
   class Property_fall
   {
   public:
-    static void update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta);
+    static bool update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta);
   };
 }
 
