@@ -1,0 +1,29 @@
+{vertex_part{
+  {out_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    void vertex_extra()
+    {
+      tex_coord_frag = (vertex_coord.xy+vec2(1,1))/2.0;
+    }
+  }}
+}}
+
+{fragment_part{
+  {uniform_var{
+    sampler2D texture_sampler;
+  }}
+
+  {in_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    vec4 get_fragment_color()
+    {
+      return texture(texture_sampler, tex_coord_frag);
+    }
+  }}
+}}

@@ -1,0 +1,38 @@
+{vertex_part{
+  {in_var{
+    vec3 normal_coord;
+
+    vec2 tex_coord;
+  }}
+
+  {out_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    void vertex_extra()
+    {
+      tex_coord_frag = tex_coord;
+    }
+  }}
+}}
+
+{fragment_part{
+  {uniform_var{
+    sampler2DArray diffuse;
+    int layer;
+  }}
+
+  {in_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    vec4 get_fragment_color()
+    {
+      vec3 texture_coord = vec3(tex_coord_frag.xy, layer);
+
+      return texture(diffuse, texture_coord);
+    }
+  }}
+}}

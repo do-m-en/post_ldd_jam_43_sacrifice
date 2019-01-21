@@ -1,0 +1,16 @@
+{vertex_part{
+  {function{
+    void vertex_extra()
+    {
+    }
+  }}
+}}
+
+{fragment_part{
+  {function{
+    vec4 get_fragment_color()
+    {
+      return vec4(0,1,0,1);
+    }
+  }}
+}}

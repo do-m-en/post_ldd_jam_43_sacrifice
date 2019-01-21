@@ -1,0 +1,51 @@
+{vertex_part{
+  {in_var{
+    vec3 normal_coord;
+    
+    vec2 tex_coord;
+  }}
+
+  {out_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    void vertex_extra()
+    {
+      tex_coord_frag = tex_coord;
+    }
+  }}
+}}
+
+{fragment_part{
+  {uniform_var{
+    sampler2D diffuse;
+    vec4 first;
+    vec4 second;
+    vec4 third;
+    vec4 conversion;
+  }}
+
+  {in_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    vec4 get_fragment_color()
+    {
+      vec4 color = texture(diffuse, tex_coord_frag);
+
+      if(color.x > 0.5f)
+        if(color.y > 0.5f)
+          color = conversion;
+        else
+          color = first;
+      else if(color.y > 0.5f)
+        color = second;
+      else if(color.z > 0.5f)
+        color = third;
+
+      return color;
+    }
+  }}
+}}

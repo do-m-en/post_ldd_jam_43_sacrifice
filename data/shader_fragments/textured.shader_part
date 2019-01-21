@@ -1,0 +1,35 @@
+{vertex_part{
+  {in_var{
+    vec3 normal_coord;
+
+    vec2 tex_coord;
+  }}
+
+  {out_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    void vertex_extra()
+    {
+      tex_coord_frag = tex_coord;
+    }
+  }}
+}}
+
+{fragment_part{
+  {uniform_var{
+    sampler2D diffuse;
+  }}
+
+  {in_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    vec4 get_fragment_color()
+    {
+      return texture(diffuse, tex_coord_frag);
+    }
+  }}
+}}

@@ -1,0 +1,29 @@
+{vertex_shader{
+  {uniform_var{
+    mat4 model;
+  }}
+
+  {in_var{
+    vec3 vertex_coord;
+  }}
+
+  {code{
+    gl_Position = projection * view * model * vec4(vertex_coord, 1.0);
+
+    vertex_extra();
+  }}
+}}
+
+{fragment_shader{
+  {out_var{
+    vec4 frag_color;
+  }}
+
+  {code{
+    frag_color = get_fragment_color();
+
+    // discard almost fully transparent fragments
+    if(frag_color.w < 0.1)
+      discard;
+  }}
+}}

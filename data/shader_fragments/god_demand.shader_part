@@ -1,0 +1,67 @@
+{vertex_part{  
+  {uniform_var{
+    float displacement_factor;
+  }}
+
+  {in_var{
+    vec3 normal_coord;
+    
+    vec2 tex_coord;
+  }}
+
+  {out_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    void vertex_extra()
+    {
+      tex_coord_frag = tex_coord;
+    }
+  }}
+  
+  {function{
+    vec4 displace_vertex(vec3 vertex_pos)
+    {
+      return vec4(vertex_pos * displacement_factor, 1.0f);
+    }
+  }}
+}}
+
+{fragment_part{
+  {uniform_var{
+    sampler2DArray diffuse;
+    int layer;
+    vec4 first;
+    vec4 second;
+    vec4 third;
+    vec4 fourth;
+  }}
+
+  {in_var{
+    vec2 tex_coord_frag;
+  }}
+
+  {function{
+    vec4 get_fragment_color()
+    {
+      vec3 texture_coord = vec3(tex_coord_frag.xy, layer);
+      vec4 color = texture(diffuse, texture_coord);
+      
+      if(layer == 2)
+      {
+        if(color.x > 0.6f)
+          if(color.y > 0.6f)
+            color = fourth;
+          else
+            color = first;
+        else if(color.y > 0.6f)
+          color = second;
+        else if(color.z > 0.6f)
+          color = third;
+      }
+      
+      return color;
+    }
+  }}
+}}
