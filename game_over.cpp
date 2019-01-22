@@ -8,11 +8,9 @@ using namespace cxx_gd;
 
 Game_over::Game_over(
       Display& display
-    , entt::Registry<std::uint32_t>& registry
     , std::function<void()> reset_function
   )
   : display_{display}
-  , registry_{registry}
   , reset_function_{reset_function}
   , texture_{"game_over", 2} // TODO implement texture resource container so that we won't load the same thing multiple times...
   , shader_{"sprite_animation", "basic"}
@@ -34,40 +32,41 @@ Game_over::Game_over(
           cxx_gd::primitive::rectangle_texture_coordinates_
         };
     }()}
-  , game_over_entity_{0}
+  , active_{false}
 {
-  //
+  auto game_over_entity = registry_.create();
+  registry_.assign<std::reference_wrapper<Mesh>>(game_over_entity, mesh_);
+  auto& material = registry_.assign<Material>(game_over_entity, &shader_, std::move(std::vector{&texture_}));
+  registry_.assign<Transform>(game_over_entity).get_position().z = 3.f;
+  registry_.assign<Parent>(game_over_entity, game_over_entity);
 }
 
 void Game_over::active(bool active, bool won)
 {
-  if(!game_over_entity_)
+  if(active)
   {
-    if(active)
-    {
-      game_over_entity_ = registry_.create();
-      registry_.assign<std::reference_wrapper<Mesh>>(game_over_entity_.value(), mesh_);
-      auto& material = registry_.assign<Material>(game_over_entity_.value(), &shader_, std::move(std::vector{&texture_}));
-      material.set("layer", static_cast<int>(!won));
-      auto& transform = registry_.assign<Transform>(game_over_entity_.value());
-      registry_.assign<Parent>(game_over_entity_.value(), game_over_entity_.value());
+    // TODO... yeah...
+    auto& material = registry_.get<Material>(*registry_.view<Material>().begin());
+    material.set("layer", static_cast<int>(!won));
 
-      display_.register_mouse_cursor_pos_callback(
-        [](double x, double y)
-        {
-          //
-        });
+    display_.register_mouse_cursor_pos_callback(
+      [](double x, double y)
+      {
+        //
+      });
 
-      display_.register_mouse_button_callback(
-        [this](int button, int action, int modifiers)
-        {
-          reset_function_();
-        });
-    }
+    display_.register_mouse_button_callback(
+      [this](int button, int action, int modifiers)
+      {
+        reset_function_();
+      });
   }
-  else
-  {
-    registry_.destroy(game_over_entity_.value());
-    game_over_entity_ = std::nullopt;
-  }
+
+  active_ = active;
+}
+
+void Game_over::render(seconds_f delta)
+{
+  if(active_) // TODO move check outside this class
+    cxx_gd::render(registry_, delta);
 }

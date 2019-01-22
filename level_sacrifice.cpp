@@ -19,7 +19,6 @@
 #include "collider_oriented_bounding_box.hpp"
 
 #include "object_loaders/obj.hpp"
-
 #include "primitives.hpp"
 
 #include <iostream>
@@ -28,16 +27,6 @@ using namespace cxx_gd;
 
 namespace
 {
-  /*Mesh load_obj_to_mesh(std::string_view name)
-  {
-    std::vector<cxx_gd::Vertex> vertices;
-    std::vector<unsigned short> indices;
-
-    cxx_gd::object_loader::obj::load(name, vertices, indices);
-
-    return {vertices, indices};
-  }*/
-
   struct Vertex_view
   {
     std::vector<glm::vec3>& vertices;
@@ -69,20 +58,6 @@ namespace
 
   Mesh load_obj_to_mesh(std::string_view name)
   {
-    /*std::vector<glm::vec3> vertices;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec2> textures;
-    std::vector<unsigned short> indices;
-
-    Vertex_view view{vertices, normals, textures};
-
-    cxx_gd::object_loader::obj::load(
-        name,
-        view,
-        indices);
-
-    return {vertices, normals, textures, indices};*/
-
     if(name == "small_sprite")
     {
       return
@@ -127,23 +102,13 @@ namespace
         };
     }
   }
-
-  struct Level_sacrifice_tag {};
 }
 
 struct Level_sacrifice::Spawner
 {
-  static std::uint32_t create_entity(Level_sacrifice& level) // TODO wrap registry_ into a class with custom public api instead... so that raw create can't be called
-  {
-    auto entity = level.registry_.create();
-    level.registry_.assign<Level_sacrifice_tag>(entity);
-
-    return entity;
-  }
-
   static void spawn_animal_token(Level_sacrifice& level, Animal_type type, glm::vec3 const& position)
   {
-    auto animal = create_entity(level);
+    auto animal = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(animal, level.meshes_[0]);
     auto& material = level.registry_.assign<Material>(animal, &level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
     material.set("orientation_x", -1);
@@ -204,16 +169,16 @@ struct Level_sacrifice::Spawner
     level.display_.register_mouse_button_callback(
       [&level](int button, int action, int modifiers)
       {
+        auto ray_direction = screen_pos_to_world_direction(
+            level.mouse_coords_,
+            {800, 600},
+            level.camera_.get_position(),
+            level.camera_.get_view_matrix(),
+            level.camera_.get_projection_matrix()
+          );
+
         if(action)
         {
-          auto ray_direction = screen_pos_to_world_direction(
-              level.mouse_coords_,
-              {800, 600},
-              level.camera_.get_position(),
-              level.camera_.get_view_matrix(),
-              level.camera_.get_projection_matrix()
-            );
-
           auto picked_entity =
             collider::Oriented_bounding_box::pick_if_any<Property_move, Property_fall>(
               level.registry_, level.camera_.get_position(), ray_direction);
@@ -233,28 +198,9 @@ struct Level_sacrifice::Spawner
 
             level.caught_entity_ = picked_entity;
           }
-          else
-          {
-            // not in use but here only for engine testing
-            auto picked_entity = collider::Sphere::pick(level.registry_, level.camera_.get_position(), ray_direction);
-
-            if(picked_entity && level.registry_.has<Property_move>(picked_entity.value()))
-            {
-              level.registry_.remove<Property_move>(picked_entity.value());
-              level.caught_entity_ = picked_entity;
-            }
-          }
         }
         else if(level.caught_entity_)
         {
-          auto ray_direction = screen_pos_to_world_direction(
-              level.mouse_coords_,
-              {800, 600},
-              level.camera_.get_position(),
-              level.camera_.get_view_matrix(),
-              level.camera_.get_projection_matrix()
-            );
-
           bool is_god_demand = level.registry_.has<Property_god_demand>(level.caught_entity_.value());
           auto picked_entity =
               is_god_demand
@@ -344,14 +290,6 @@ struct Level_sacrifice::Spawner
         }
         else
         {
-          auto ray_direction = screen_pos_to_world_direction(
-              level.mouse_coords_,
-              {800, 600},
-              level.camera_.get_position(),
-              level.camera_.get_view_matrix(),
-              level.camera_.get_projection_matrix()
-            );
-
           auto picked_entity =
             collider::Oriented_bounding_box::pick_if_any<Property_conversion_machine>(
               level.registry_, level.camera_.get_position(), ray_direction);
@@ -366,7 +304,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_background(Level_sacrifice& level)
   {
-    auto background = create_entity(level);
+    auto background = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(background, level.meshes_[0]);
     level.registry_.assign<Material>(background, &level.shaders_[2], std::move(std::vector{&level.textures_[1]}));
     level.registry_.assign<Parent>(background, background);
@@ -378,7 +316,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_gigant_god_mouth(Level_sacrifice& level)
   {
-    auto gigant_mouth = create_entity(level);
+    auto gigant_mouth = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(gigant_mouth, level.meshes_[2]);
     auto& material = level.registry_.assign<Material>(gigant_mouth, &level.shaders_[0], std::move(std::vector{&level.textures_[2]}));
     auto& transform = level.registry_.assign<Transform>(gigant_mouth);
@@ -400,7 +338,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_house(Level_sacrifice& level, glm::vec3 const& position)
   {
-    auto house = create_entity(level);
+    auto house = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(house, level.meshes_[0]);
     auto& material = level.registry_.assign<Material>(house, &level.shaders_[0], std::move(std::vector{&level.textures_[5]}));
     material.set("layer", 1);
@@ -412,7 +350,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_conversion_machine(Level_sacrifice& level, glm::vec3 const& position)
   {
-    auto conversion_machine = create_entity(level);
+    auto conversion_machine = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(conversion_machine, level.meshes_[1]);
     auto& material = level.registry_.assign<Material>(conversion_machine, &level.shaders_[4], std::move(std::vector{&level.textures_[4]}));
     auto& transform = level.registry_.assign<Transform>(conversion_machine);
@@ -428,8 +366,6 @@ struct Level_sacrifice::Spawner
           }};
 
     level.registry_.assign<collider::Oriented_bounding_box>(conversion_machine, rectangle_triangle_strip_3_large);
-
-    //level.registry_.assign<Debug_mesh>(conversion_machine, std::move(level.registry_.get<collider::Oriented_bounding_box>(conversion_machine).debug_mesh_.value()));
   }
 
   static void spawn_god_demand(seconds_f delta, Level_sacrifice& level)
@@ -474,7 +410,7 @@ struct Level_sacrifice::Spawner
             (number > (level.hardness_level_[0] + level.hardness_level_[1] + level.hardness_level_[2]) ? random_type(level.random_engine_) : 5)
           }};
 
-        auto demand = create_entity(level);
+        auto demand = level.registry_.create();
         level.registry_.assign<std::reference_wrapper<Mesh>>(demand, level.meshes_[0]);
         auto& material = level.registry_.assign<Material>(demand, &level.shaders_[3], std::move(std::vector{&level.textures_[3]}));
         level.registry_.assign<Parent>(demand, demand);
@@ -490,8 +426,6 @@ struct Level_sacrifice::Spawner
           }};
 
         level.registry_.assign<collider::Oriented_bounding_box>(demand, rectangle_triangle_strip_3_large);
-
-        //level.registry_.assign<Debug_mesh>(demand, std::move(level.registry_.get<collider::Oriented_bounding_box>(demand).debug_mesh_.value()));
       }
 
       level.from_last_demand_spawn_ = 0s;
@@ -515,7 +449,7 @@ struct Level_sacrifice::Spawner
         ? Move_direction::Left
         : Move_direction::Right;
 
-      auto animal = create_entity(level);
+      auto animal = level.registry_.create();
       level.registry_.assign<std::reference_wrapper<Mesh>>(animal, level.meshes_[0]);
       auto& material = level.registry_.assign<Material>(animal, &level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
       material.set("orientation_x", direction == Move_direction::Left ? -1 : 1);
@@ -532,18 +466,12 @@ struct Level_sacrifice::Spawner
       level.registry_.assign<Parent>(animal, animal);
       level.registry_.assign<Property_move>(animal, Property_move(direction));
       level.registry_.assign<collider::Oriented_bounding_box>(animal, cxx_gd::primitive::rectangle_triangle_strip_3_);
-
-      //level.registry_.assign<Debug_mesh>(animal, std::move(level.registry_.get<collider::Oriented_bounding_box>(animal).debug_mesh_.value()));
-      //registry_.assign<collider::Sphere>(animal, "monkey_suzanne");
     }
   }
 
   static void activate(Level_sacrifice& level)
   {
-    for(auto entity : level.registry_.view<Level_sacrifice_tag>())
-    {
-      level.registry_.destroy(entity);
-    }
+    level.registry_.reset();
 
     Spawner::register_mouse_cursor_pos_callback(level);
     Spawner::register_mouse_button_callback(level);
@@ -580,8 +508,6 @@ Level_sacrifice::Level_sacrifice(Display& display)
       , Texture{"god_demand", 3}
       , Texture("conversion_machine")
       , Texture{"house", 2}}
-  //, textures_{Texture{{"14", "15", "16", "17"}}}
-  //, shaders_{Shader{"sprites", display_}}
   , shaders_{
         Shader{"sprite_animation", "basic"}
       , Shader{"oriented_sprite_animation", "basic"}
@@ -602,11 +528,9 @@ Level_sacrifice::Level_sacrifice(Display& display)
       , {false, 15.f}}}
   , game_over_{
       display_,
-      registry_,
       [this](){ Spawner::activate(*this); }
     }
 {
-  auto level = registry_.create();
   Spawner::activate(*this);
 }
 
@@ -645,6 +569,7 @@ void Level_sacrifice::render(seconds_f delta)
   display_.render_start();
 
   cxx_gd::render(registry_, delta);
+  game_over_.render(delta);
 
   Debug_mesh::render(registry_, draw_shader_);
 
