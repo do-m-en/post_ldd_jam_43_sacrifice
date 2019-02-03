@@ -27,35 +27,6 @@ using namespace cxx_gd;
 
 namespace
 {
-  struct Vertex_view
-  {
-    std::vector<glm::vec3>& vertices;
-    std::vector<glm::vec3>& normals;
-    std::vector<glm::vec2>& textures;
-
-    Vertex_view(
-        std::vector<glm::vec3>& vertices_,
-        std::vector<glm::vec3>& normals_,
-        std::vector<glm::vec2>& textures_)
-      : vertices{vertices_}
-      , normals{normals_}
-      , textures{textures_}
-    {
-    }
-
-    void emplace_back(
-        glm::vec3 const& vertex,
-        glm::vec3 const& normal,
-        glm::vec2 const& texture)
-    {
-      vertices.push_back(vertex);
-      normals.push_back(normal);
-      textures.push_back(texture);
-    }
-
-    std::size_t size() const {return vertices.size();}
-  };
-
   Mesh load_obj_to_mesh(std::string_view name)
   {
     if(name == "small_sprite")
@@ -126,11 +97,11 @@ struct Level_sacrifice::Spawner
   static void register_mouse_cursor_pos_callback(Level_sacrifice& level)
   {
     level.display_.register_mouse_cursor_pos_callback(
-      [&level](double x, double y)
+      [&level, in_collision = std::vector<std::pair<std::uint32_t, std::uint32_t>>{}](double x, double y) mutable
       {
         level.mouse_coords_ = {x, y};
 
-        if(level.caught_entity_)
+        if(level.caught_entity_) // TODO emulating collision - move to collision system once implemented
         {
           auto ray_direction = screen_pos_to_world_direction(
               level.mouse_coords_,
@@ -153,11 +124,20 @@ struct Level_sacrifice::Spawner
               collider::Oriented_bounding_box::pick_if_all<Property_god_mouth>(
                 level.registry_, level.camera_.get_position(), ray_direction);
 
-            level.registry_
-              .get<Property_god_mouth>(level.mouth_entity_)
-              .mouth(
-                picked_entity ? Mouth_state::Open : Mouth_state::Close,
-                level.registry_.get<Material>(level.mouth_entity_));
+            if(picked_entity.has_value())
+            {
+              Property_god_mouth::on_collision_enter(
+                  {level.registry_, picked_entity.value()}
+                );
+              in_collision.push_back(std::minmax(picked_entity.value(), level.caught_entity_.value()));
+            }
+            else if(in_collision.size()) // TODO collision will later be handled by a collision system
+            {
+              Property_god_mouth::on_collision_exit(
+                  {level.registry_, picked_entity.value()}
+                );
+              in_collision.clear();
+            }
           }
         }
       });
@@ -213,72 +193,37 @@ struct Level_sacrifice::Spawner
           {
             if(is_god_demand)
             {
-              level.registry_.destroy(level.caught_entity_.value());
-              level.registry_
-                .get<Property_god_mouth>(level.mouth_entity_)
-                .mouth(
-                  Mouth_state::Close,
-                  level.registry_.get<Material>(level.mouth_entity_));
-              ++level.victory_counter_;
-
-              for(std::size_t i = 0; i < level.hardness_level_.size(); ++i)
-              {
-                if(level.hardness_level_[i] < (i + 1))
-                {
-                  ++level.hardness_level_[i];
-
-                  if(i == 2 && level.hardness_level_[i] == 1)
+              // TODO once we enter this function we already know if we are in collision or not so checking emulation here is redundant...
+              Property_god_mouth::Shared_collision_object shared{
+                  level.victory_counter_,
+                  level.hardness_level_,
+                  [&level]()
+                  {
                     Spawner::spawn_conversion_machine(level, {10.f, 1.f, 0.f});
-
-                  break;
-                }
-              }
+                  }
+                };
+              Property_god_mouth::on_collision(
+                {level.registry_, level.mouth_entity_},
+                {level.registry_, level.caught_entity_.value()},
+                shared);
             }
             else if(level.registry_.has<Property_god_demand>(picked_entity.value()))
             {
-              auto& demand = level.registry_.get<Property_god_demand>(picked_entity.value());
-              auto& material = level.registry_.get<Material>(picked_entity.value());
-              auto animal_type = level.registry_.get<Property_animal>(level.caught_entity_.value()).type();
-
-              if(demand.remove_requirement(material, animal_type))
-              {
-                level.registry_.destroy(level.caught_entity_.value());
-                if(demand.done(material))
-                {
-                  level.registry_.assign<Property_fall>(picked_entity.value());
-                  std::find_if(
-                    std::begin(level.demand_positions_),
-                    std::end(level.demand_positions_),
-                    [&demand](auto const& item) {return item.second == demand.position();})->first = false;
-
-                  using namespace std::chrono_literals;
-                  level.from_last_demand_spawn_ = 0s;
-                }
-              }
-              else
-                level.registry_.assign<Property_fall>(level.caught_entity_.value()); // the animal escapes!
+              Property_god_demand::Shared_collision_object shared{level.demand_positions_, level.from_last_demand_spawn_};
+              Property_god_demand::on_collision(
+                  {level.registry_, picked_entity.value()}
+                , {level.registry_, level.caught_entity_.value()}
+                , shared);
             }
-            else // Property_conversion_machine
+            else
             {
-              auto& conversion_machine =
-                level.registry_
-                  .get<Property_conversion_machine>(picked_entity.value());
-              bool done =
-                conversion_machine
-                  .add_animal(
-                      level.registry_.get<Property_animal>(level.caught_entity_.value()).type()
-                    , level.registry_.get<Material>(picked_entity.value()));
-              level.registry_.destroy(level.caught_entity_.value());
-              auto& transform =
-                level.registry_
-                  .get<Transform>(picked_entity.value());
-
-              if(done)
-              {
-                auto position = transform.get_position();
-                position.y -= 2.f;
-                spawn_animal_token(level, conversion_machine.get_animal_type(), position);
-              }
+              Property_conversion_machine::on_collision(
+                {level.registry_, picked_entity.value()},
+                {level.registry_, level.caught_entity_.value()},
+                [&level](Animal_type animal_type, glm::vec3 const& position)
+                {
+                  spawn_animal_token(level, animal_type, position);
+                });
             }
           }
           else

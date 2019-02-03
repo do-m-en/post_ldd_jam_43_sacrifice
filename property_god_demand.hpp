@@ -3,6 +3,7 @@
 
 #include "property_animal.hpp"
 #include "property_life.hpp"
+#include "property_fall.hpp"
 #include "material.hpp"
 #include <array>
 #include <algorithm>
@@ -11,6 +12,9 @@
 #include <glm/glm.hpp>
 #include <entt/entt.hpp>
 #include <cmath>
+#include <tuple>
+
+#include "entity.hpp"
 
 namespace cxx_gd
 {
@@ -24,6 +28,51 @@ namespace cxx_gd
   class Property_god_demand
   {
   public:
+    struct Shared_collision_object
+    {
+      std::array<std::pair<bool, float>, 4>& demand_positions;
+      std::chrono::duration<float>& from_last_demand_spawn;
+    };
+
+    using Demand =
+      Modifiable_Entity<
+          Property_god_demand
+        , Material
+      >;
+
+    using Animal = Modifiable_Entity<Property_animal>;
+
+    // TODO anoying dependencies... consider how this could be split so that each property handles its own part (and that level state doesn't leak here...)
+    static void on_collision(
+        Demand demand
+      , Animal animal
+      , Shared_collision_object& collision_object
+    )
+    {
+      if(demand.get<Property_god_demand>().remove_requirement(
+        demand.get<Material>(), animal.get<Property_animal>().type()))
+      {
+        animal.destroy();
+        if(demand.get<Property_god_demand>().done(demand.get<Material>()))
+        {
+          demand.assign<Property_fall>();
+          std::find_if(
+              std::begin(collision_object.demand_positions),
+              std::end(collision_object.demand_positions),
+              [&demand = demand.get<Property_god_demand>()](auto const& item)
+              {
+                return item.second == demand.position();
+              }
+            )->first = false;
+
+          using namespace std::chrono_literals;
+          collision_object.from_last_demand_spawn = 0s;
+        }
+      }
+      else
+        animal.assign<Property_fall>(); // the animal escapes!
+    }
+
     static bool update(
       entt::Registry<std::uint32_t>& registry,
       std::chrono::duration<float> delta,
@@ -54,7 +103,7 @@ namespace cxx_gd
 
             registry.destroy(entity);
 
-            if(!Property_life::destroy_one(registry))
+            if(!Property_life::destroy_one(registry)) // TODO require healt system?
               return false;
           }
         }
@@ -73,6 +122,7 @@ namespace cxx_gd
       material.set("layer", static_cast<int>(stage_));
     }
 
+  private:
     bool remove_requirement(Material& material, Animal_type type)
     {
       if(auto it = std::find(types_.begin(), types_.end(), static_cast<int>(type)); it != std::end(types_))
@@ -138,7 +188,6 @@ namespace cxx_gd
       return std::fmod(elapsed_.count(), 0.2f) + 1.f;
     }
 
-  private:
     void update_uniforms_(Material& material)
     {
       std::sort(types_.begin(), types_.end());
