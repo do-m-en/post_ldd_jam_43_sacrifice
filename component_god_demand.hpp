@@ -1,9 +1,9 @@
-#ifndef cxx_gd_PROPERTY_GOD_DEMAND_HPP_INCLUDED
-#define cxx_gd_PROPERTY_GOD_DEMAND_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_GOD_DEMAND_HPP_INCLUDED
+#define cxx_gd_COMPONENT_GOD_DEMAND_HPP_INCLUDED
 
-#include "property_animal.hpp"
-#include "property_life.hpp"
-#include "property_fall.hpp"
+#include "component_animal.hpp"
+#include "component_life.hpp"
+#include "component_fall.hpp"
 #include "material.hpp"
 #include <array>
 #include <algorithm>
@@ -25,7 +25,7 @@ namespace cxx_gd
     Demand
   };
 
-  class Property_god_demand
+  class Component_god_demand
   {
   public:
     struct Shared_collision_object
@@ -36,11 +36,11 @@ namespace cxx_gd
 
     using Demand =
       Modifiable_Entity<
-          Property_god_demand
+          Component_god_demand
         , Material
       >;
 
-    using Animal = Modifiable_Entity<Property_animal>;
+    using Animal = Modifiable_Entity<Component_animal>;
 
     // TODO anoying dependencies... consider how this could be split so that each property handles its own part (and that level state doesn't leak here...)
     static void on_collision(
@@ -49,17 +49,17 @@ namespace cxx_gd
       , Shared_collision_object& collision_object
     )
     {
-      if(demand.get<Property_god_demand>().remove_requirement(
-        demand.get<Material>(), animal.get<Property_animal>().type()))
+      if(demand.get<Component_god_demand>().remove_requirement(
+        demand.get<Material>(), animal.get<Component_animal>().type()))
       {
         animal.destroy();
-        if(demand.get<Property_god_demand>().done(demand.get<Material>()))
+        if(demand.get<Component_god_demand>().done(demand.get<Material>()))
         {
-          demand.assign<Property_fall>();
+          demand.assign<Component_fall>();
           std::find_if(
               std::begin(collision_object.demand_positions),
               std::end(collision_object.demand_positions),
-              [&demand = demand.get<Property_god_demand>()](auto const& item)
+              [&demand = demand.get<Component_god_demand>()](auto const& item)
               {
                 return item.second == demand.position();
               }
@@ -70,7 +70,7 @@ namespace cxx_gd
         }
       }
       else
-        animal.assign<Property_fall>(); // the animal escapes!
+        animal.assign<Component_fall>(); // the animal escapes!
     }
 
     static bool update(
@@ -78,10 +78,10 @@ namespace cxx_gd
       std::chrono::duration<float> delta,
       std::array<std::pair<bool, float>, 4>& positions)
     {
-      auto view = registry.view<Property_god_demand, Material>();
+      auto view = registry.view<Component_god_demand, Material>();
       for(auto entity : view)
       {
-        auto& demand = view.get<Property_god_demand>(entity);
+        auto& demand = view.get<Component_god_demand>(entity);
         demand.add_life_lenght(delta);
 
         if(!demand.is_done())
@@ -103,7 +103,7 @@ namespace cxx_gd
 
             registry.destroy(entity);
 
-            if(!Property_life::destroy_one(registry)) // TODO require healt system?
+            if(!Component_life::destroy_one(registry)) // TODO require healt system?
               return false;
           }
         }
@@ -112,7 +112,7 @@ namespace cxx_gd
       return true;
     }
 
-    Property_god_demand(std::array<int, 4> types, Material& material, int position) // would be nice to have enum mapping in c++...
+    Component_god_demand(std::array<int, 4> types, Material& material, int position) // would be nice to have enum mapping in c++...
       : types_{std::move(types)}
       , stage_{God_demand_stage::Demand}
       , elapsed_{std::chrono::seconds{0}}
@@ -200,7 +200,7 @@ namespace cxx_gd
             names[i],
             std::move(
               glm::vec4{
-                Property_animal::type_to_color(static_cast<Animal_type>(types_[i])),
+                Component_animal::type_to_color(static_cast<Animal_type>(types_[i])),
                 1.f}));
         else
           material.set(names[i], std::move(glm::vec4{0.5f, 0.5f, 0.5f, 1.f}));
@@ -216,4 +216,4 @@ namespace cxx_gd
   };
 }
 
-#endif // cxx_gd_PROPERTY_GOD_DEMAND_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_GOD_DEMAND_HPP_INCLUDED

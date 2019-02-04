@@ -1,5 +1,5 @@
-#ifndef cxx_gd_PROPERTY_ANIMAL_HPP_INCLUDED
-#define cxx_gd_PROPERTY_ANIMAL_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_ANIMAL_HPP_INCLUDED
+#define cxx_gd_COMPONENT_ANIMAL_HPP_INCLUDED
 
 #include <glm/glm.hpp>
 
@@ -14,10 +14,10 @@ namespace cxx_gd
     , fox
   };
 
-  class Property_animal
+  class Component_animal
   {
   public:
-    Property_animal(Animal_type type)
+    Component_animal(Animal_type type)
       : type_{type}
       , color_{type_to_color(type_)}
     {
@@ -56,4 +56,4 @@ namespace cxx_gd
   };
 }
 
-#endif // cxx_gd_PROPERTY_ANIMAL_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_ANIMAL_HPP_INCLUDED

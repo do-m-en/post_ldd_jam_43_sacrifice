@@ -1,5 +1,5 @@
-#ifndef cxx_gd_PROPERTY_MOVE_HPP_INCLUDED
-#define cxx_gd_PROPERTY_MOVE_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_MOVE_HPP_INCLUDED
+#define cxx_gd_COMPONENT_MOVE_HPP_INCLUDED
 
 #include <chrono>
 #include <cstdint>
@@ -14,12 +14,12 @@ enum class Move_direction
   Right = 1
 };
 
-class Property_move
+class Component_move
 {
 public:
   static void update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta);
 
-  Property_move(Move_direction direction)
+  Component_move(Move_direction direction)
     : direction_{direction}
     , elapsed_{0}
   {
@@ -33,4 +33,4 @@ private:
 
 } // ns
 
-#endif // cxx_gd_PROPERTY_MOVE_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_MOVE_HPP_INCLUDED

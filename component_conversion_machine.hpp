@@ -1,5 +1,5 @@
-#ifndef cxx_gd_PROPERTY_CONVERSION_MACHINE_HPP_INCLUDED
-#define cxx_gd_PROPERTY_CONVERSION_MACHINE_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_CONVERSION_MACHINE_HPP_INCLUDED
+#define cxx_gd_COMPONENT_CONVERSION_MACHINE_HPP_INCLUDED
 
 #include <glm/glm.hpp>
 #include <entt/entt.hpp>
@@ -7,21 +7,21 @@
 
 #include "entity.hpp"
 #include "material.hpp"
-#include "property_animal.hpp"
+#include "component_animal.hpp"
 
 namespace cxx_gd
 {
-  class Property_conversion_machine
+  class Component_conversion_machine
   {
   public:
     using Machine =
       Entity<
-          Property_conversion_machine
+          Component_conversion_machine
         , Material
         , Transform
       >;
 
-    using Animal = Modifiable_Entity<Property_animal&>;
+    using Animal = Modifiable_Entity<Component_animal&>;
 
     static void on_collision(
       Machine machine,
@@ -29,11 +29,11 @@ namespace cxx_gd
       std::function<void(Animal_type, glm::vec3 const&)> spawn) // TODO switch this with a state object
     {
       auto& conversion_machine =
-        machine.get<Property_conversion_machine>();
+        machine.get<Component_conversion_machine>();
       bool done =
         conversion_machine
           .add_animal(
-              animal.get<Property_animal>().type()
+              animal.get<Component_animal>().type()
             , machine.get<Material>()); // TODO same entity... should be added automatically as a call parameter
       animal.destroy();
 
@@ -45,7 +45,7 @@ namespace cxx_gd
       }
     }
 
-    Property_conversion_machine(Material& material)
+    Component_conversion_machine(Material& material)
       : conversion_{Animal_type::cat}
     {
       update_uniforms_(material);
@@ -90,7 +90,7 @@ namespace cxx_gd
         ,   first_
           ? std::move(
               glm::vec4{
-                Property_animal::type_to_color(first_.value()),
+                Component_animal::type_to_color(first_.value()),
                 1.f})
           : default_value_);
       material.set(
@@ -98,7 +98,7 @@ namespace cxx_gd
         ,   second_
           ? std::move(
               glm::vec4{
-                Property_animal::type_to_color(second_.value()),
+                Component_animal::type_to_color(second_.value()),
                 1.f})
           : default_value_);
       material.set("third", default_value_);
@@ -106,7 +106,7 @@ namespace cxx_gd
         "conversion",
         std::move(
           glm::vec4{
-            Property_animal::type_to_color(conversion_),
+            Component_animal::type_to_color(conversion_),
             1.f}));
     }
 
@@ -118,4 +118,4 @@ namespace cxx_gd
   };
 }
 
-#endif // cxx_gd_PROPERTY_CONVERSION_MACHINE_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_CONVERSION_MACHINE_HPP_INCLUDED

@@ -1,5 +1,5 @@
-#ifndef cxx_gd_PROPERTY_GOD_MOUTH_HPP_INCLUDED
-#define cxx_gd_PROPERTY_GOD_MOUTH_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_GOD_MOUTH_HPP_INCLUDED
+#define cxx_gd_COMPONENT_GOD_MOUTH_HPP_INCLUDED
 
 #include "material.hpp"
 #include <entt/entt.hpp>
@@ -13,12 +13,12 @@ namespace cxx_gd
     Close
   };
 
-  class Property_god_mouth
+  class Component_god_mouth
   {
   public:
     using Mouth =
       Entity<
-          Property_god_mouth
+          Component_god_mouth
         , Material
       >;
 
@@ -26,7 +26,7 @@ namespace cxx_gd
       Mouth mouth
     )
     {
-      mouth.get<Property_god_mouth>()
+      mouth.get<Component_god_mouth>()
         .mouth(Mouth_state::Open, mouth.get<Material>());
     }
 
@@ -34,7 +34,7 @@ namespace cxx_gd
       Mouth mouth
     )
     {
-      mouth.get<Property_god_mouth>()
+      mouth.get<Component_god_mouth>()
         .mouth(Mouth_state::Close, mouth.get<Material>());
     }
 
@@ -76,7 +76,7 @@ namespace cxx_gd
       }
     }
 
-    Property_god_mouth(Material& material)
+    Component_god_mouth(Material& material)
     {
       material.set("layer", static_cast<int>(Mouth_state::Close));
     }
@@ -89,4 +89,4 @@ namespace cxx_gd
   };
 }
 
-#endif // cxx_gd_PROPERTY_GOD_MOUTH_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_GOD_MOUTH_HPP_INCLUDED

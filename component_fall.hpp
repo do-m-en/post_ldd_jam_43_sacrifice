@@ -1,5 +1,5 @@
-#ifndef cxx_gd_PROPERTY_FALL_HPP_INCLUDED
-#define cxx_gd_PROPERTY_FALL_HPP_INCLUDED
+#ifndef cxx_gd_COMPONENT_FALL_HPP_INCLUDED
+#define cxx_gd_COMPONENT_FALL_HPP_INCLUDED
 
 #include <chrono>
 #include <cstdint>
@@ -7,11 +7,11 @@
 
 namespace cxx_gd
 {
-  class Property_fall
+  class Component_fall
   {
   public:
     static bool update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta);
   };
 }
 
-#endif // cxx_gd_PROPERTY_FALL_HPP_INCLUDED
+#endif // cxx_gd_COMPONENT_FALL_HPP_INCLUDED

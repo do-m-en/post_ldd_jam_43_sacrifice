@@ -1,4 +1,4 @@
-#include "property_move.hpp"
+#include "component_move.hpp"
 
 #include "transform.hpp"
 #include "material.hpp"
@@ -6,13 +6,13 @@
 
 using namespace cxx_gd;
 
-void Property_move::update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta)
+void Component_move::update(entt::Registry<std::uint32_t>& registry, std::chrono::duration<float> delta)
 {
-  auto view = registry.view<Transform, Property_move, Material>();
+  auto view = registry.view<Transform, Component_move, Material>();
   for(auto entity : view)
   {
     auto& transform = view.get<Transform>(entity);
-    auto& move = view.get<Property_move>(entity);
+    auto& move = view.get<Component_move>(entity);
     auto start_position_x = transform.get_position().x;
     transform.get_position().x =
         transform.get_position().x

@@ -7,13 +7,13 @@
 #include "ecs_helpers.hpp"
 #include "screen_to_ray.hpp"
 
-#include "property_move.hpp"
-#include "property_fall.hpp"
-#include "property_animal.hpp"
-#include "property_god_demand.hpp"
-#include "property_god_mouth.hpp"
-#include "property_conversion_machine.hpp"
-#include "property_life.hpp"
+#include "component_move.hpp"
+#include "component_fall.hpp"
+#include "component_animal.hpp"
+#include "component_god_demand.hpp"
+#include "component_god_mouth.hpp"
+#include "component_conversion_machine.hpp"
+#include "component_life.hpp"
 
 #include "collider_sphere.hpp"
 #include "collider_oriented_bounding_box.hpp"
@@ -84,13 +84,13 @@ struct Level_sacrifice::Spawner
     auto& material = level.registry_.assign<Material>(animal, &level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
     material.set("orientation_x", -1);
 
-    auto& animal_type = level.registry_.assign<Property_animal>(animal, type);
+    auto& animal_type = level.registry_.assign<Component_animal>(animal, type);
     material.set("animal_color", animal_type.color());
 
     auto& transform = level.registry_.assign<Transform>(animal);
     transform.get_position() = position;
     level.registry_.assign<Parent>(animal, animal);
-    level.registry_.assign<Property_move>(animal, Property_move(Move_direction::Left));
+    level.registry_.assign<Component_move>(animal, Move_direction::Left);
     level.registry_.assign<collider::Oriented_bounding_box>(animal, cxx_gd::primitive::rectangle_triangle_strip_3_);
   }
 
@@ -117,23 +117,23 @@ struct Level_sacrifice::Spawner
 
           transform.get_position() = point_2;
 
-          bool is_god_demand = level.registry_.has<Property_god_demand>(level.caught_entity_.value());
+          bool is_god_demand = level.registry_.has<Component_god_demand>(level.caught_entity_.value());
           if(is_god_demand)
           {
             auto picked_entity =
-              collider::Oriented_bounding_box::pick_if_all<Property_god_mouth>(
+              collider::Oriented_bounding_box::pick_if_all<Component_god_mouth>(
                 level.registry_, level.camera_.get_position(), ray_direction);
 
             if(picked_entity.has_value())
             {
-              Property_god_mouth::on_collision_enter(
+              Component_god_mouth::on_collision_enter(
                   {level.registry_, picked_entity.value()}
                 );
               in_collision.push_back(std::minmax(picked_entity.value(), level.caught_entity_.value()));
             }
             else if(in_collision.size()) // TODO collision will later be handled by a collision system
             {
-              Property_god_mouth::on_collision_exit(
+              Component_god_mouth::on_collision_exit(
                   {level.registry_, picked_entity.value()}
                 );
               in_collision.clear();
@@ -160,16 +160,16 @@ struct Level_sacrifice::Spawner
         if(action)
         {
           auto picked_entity =
-            collider::Oriented_bounding_box::pick_if_any<Property_move, Property_fall>(
+            collider::Oriented_bounding_box::pick_if_any<Component_move, Component_fall>(
               level.registry_, level.camera_.get_position(), ray_direction);
 
           if(picked_entity)
           {
-            if(level.registry_.has<Property_move>(picked_entity.value()))
-              level.registry_.remove<Property_move>(picked_entity.value());
+            if(level.registry_.has<Component_move>(picked_entity.value()))
+              level.registry_.remove<Component_move>(picked_entity.value());
 
-            if(level.registry_.has<Property_fall>(picked_entity.value()))
-              level.registry_.remove<Property_fall>(picked_entity.value());
+            if(level.registry_.has<Component_fall>(picked_entity.value()))
+              level.registry_.remove<Component_fall>(picked_entity.value());
             else
             {
               auto& transform = level.registry_.get<Transform>(picked_entity.value());
@@ -181,12 +181,12 @@ struct Level_sacrifice::Spawner
         }
         else if(level.caught_entity_)
         {
-          bool is_god_demand = level.registry_.has<Property_god_demand>(level.caught_entity_.value());
+          bool is_god_demand = level.registry_.has<Component_god_demand>(level.caught_entity_.value());
           auto picked_entity =
               is_god_demand
-            ? collider::Oriented_bounding_box::pick_if_all<Property_god_mouth>(
+            ? collider::Oriented_bounding_box::pick_if_all<Component_god_mouth>(
                 level.registry_, level.camera_.get_position(), ray_direction)
-            : collider::Oriented_bounding_box::pick_if_any<Property_god_demand, Property_conversion_machine>(
+            : collider::Oriented_bounding_box::pick_if_any<Component_god_demand, Component_conversion_machine>(
                 level.registry_, level.camera_.get_position(), ray_direction);
 
           if(picked_entity)
@@ -194,7 +194,7 @@ struct Level_sacrifice::Spawner
             if(is_god_demand)
             {
               // TODO once we enter this function we already know if we are in collision or not so checking emulation here is redundant...
-              Property_god_mouth::Shared_collision_object shared{
+              Component_god_mouth::Shared_collision_object shared{
                   level.victory_counter_,
                   level.hardness_level_,
                   [&level]()
@@ -202,22 +202,22 @@ struct Level_sacrifice::Spawner
                     Spawner::spawn_conversion_machine(level, {10.f, 1.f, 0.f});
                   }
                 };
-              Property_god_mouth::on_collision(
+              Component_god_mouth::on_collision(
                 {level.registry_, level.mouth_entity_},
                 {level.registry_, level.caught_entity_.value()},
                 shared);
             }
-            else if(level.registry_.has<Property_god_demand>(picked_entity.value()))
+            else if(level.registry_.has<Component_god_demand>(picked_entity.value()))
             {
-              Property_god_demand::Shared_collision_object shared{level.demand_positions_, level.from_last_demand_spawn_};
-              Property_god_demand::on_collision(
+              Component_god_demand::Shared_collision_object shared{level.demand_positions_, level.from_last_demand_spawn_};
+              Component_god_demand::on_collision(
                   {level.registry_, picked_entity.value()}
                 , {level.registry_, level.caught_entity_.value()}
                 , shared);
             }
             else
             {
-              Property_conversion_machine::on_collision(
+              Component_conversion_machine::on_collision(
                 {level.registry_, picked_entity.value()},
                 {level.registry_, level.caught_entity_.value()},
                 [&level](Animal_type animal_type, glm::vec3 const& position)
@@ -228,7 +228,7 @@ struct Level_sacrifice::Spawner
           }
           else
           {
-            level.registry_.assign<Property_fall>(level.caught_entity_.value());
+            level.registry_.assign<Component_fall>(level.caught_entity_.value());
           }
 
           level.caught_entity_ = std::nullopt;
@@ -236,12 +236,12 @@ struct Level_sacrifice::Spawner
         else
         {
           auto picked_entity =
-            collider::Oriented_bounding_box::pick_if_any<Property_conversion_machine>(
+            collider::Oriented_bounding_box::pick_if_any<Component_conversion_machine>(
               level.registry_, level.camera_.get_position(), ray_direction);
 
           if(picked_entity)
             level.registry_
-              .get<Property_conversion_machine>(picked_entity.value())
+              .get<Component_conversion_machine>(picked_entity.value())
               .next_animal(level.registry_.get<Material>(picked_entity.value()));
         }
       });
@@ -267,7 +267,7 @@ struct Level_sacrifice::Spawner
     auto& transform = level.registry_.assign<Transform>(gigant_mouth);
     transform.get_position() = glm::vec3{0.f, 10.f, 0.f};
     level.registry_.assign<Parent>(gigant_mouth, gigant_mouth);
-    level.registry_.assign<Property_god_mouth>(gigant_mouth, material);
+    level.registry_.assign<Component_god_mouth>(gigant_mouth, material);
 
     constexpr std::array<glm::vec3, 4> rectangle_triangle_strip_3_large = {{
             {-2.f, 1.f, 0.f}, //vertex 1
@@ -290,7 +290,7 @@ struct Level_sacrifice::Spawner
     auto& transform = level.registry_.assign<Transform>(house);
     transform.get_position() = position;
     level.registry_.assign<Parent>(house, house);
-    level.registry_.assign<Property_life>(house);
+    level.registry_.assign<Component_life>(house);
   }
 
   static void spawn_conversion_machine(Level_sacrifice& level, glm::vec3 const& position)
@@ -301,7 +301,7 @@ struct Level_sacrifice::Spawner
     auto& transform = level.registry_.assign<Transform>(conversion_machine);
     transform.get_position() = position;
     level.registry_.assign<Parent>(conversion_machine, conversion_machine);
-    level.registry_.assign<Property_conversion_machine>(conversion_machine, material);
+    level.registry_.assign<Component_conversion_machine>(conversion_machine, material);
 
     constexpr std::array<glm::vec3, 4> rectangle_triangle_strip_3_large = {{
             {-2.f, 2.f, 0.f}, //vertex 1
@@ -361,7 +361,7 @@ struct Level_sacrifice::Spawner
         level.registry_.assign<Parent>(demand, demand);
         auto& transform = level.registry_.assign<Transform>(demand);
         transform.get_position() = glm::vec3{item->second, random_offset(level.random_engine_) + 10.f, 0.f};
-        level.registry_.assign<Property_god_demand>(demand, std::move(demand_colors), material, static_cast<int>(item->second));
+        level.registry_.assign<Component_god_demand>(demand, std::move(demand_colors), material, static_cast<int>(item->second));
 
         constexpr std::array<glm::vec3, 4> rectangle_triangle_strip_3_large = {{
             {-1.5f, 1.5f, 0.f}, //vertex 1
@@ -399,7 +399,7 @@ struct Level_sacrifice::Spawner
       auto& material = level.registry_.assign<Material>(animal, &level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
       material.set("orientation_x", direction == Move_direction::Left ? -1 : 1);
 
-      auto& animal_type = level.registry_.assign<Property_animal>(animal, static_cast<Animal_type>(random_type(level.random_engine_)));
+      auto& animal_type = level.registry_.assign<Component_animal>(animal, static_cast<Animal_type>(random_type(level.random_engine_)));
       material.set("animal_color", animal_type.color());
 
       auto& transform = level.registry_.assign<Transform>(animal);
@@ -409,7 +409,7 @@ struct Level_sacrifice::Spawner
             random_y_position(level.random_engine_),
             0.f};
       level.registry_.assign<Parent>(animal, animal);
-      level.registry_.assign<Property_move>(animal, Property_move(direction));
+      level.registry_.assign<Component_move>(animal, Component_move(direction));
       level.registry_.assign<collider::Oriented_bounding_box>(animal, cxx_gd::primitive::rectangle_triangle_strip_3_);
     }
   }
@@ -485,10 +485,10 @@ void Level_sacrifice::update(seconds_f delta)
   {
     if(victory_counter_ < 20)
     {
-      if(Property_god_demand::update(registry_, delta, demand_positions_)
-        && Property_fall::update(registry_, delta))
+      if(Component_god_demand::update(registry_, delta, demand_positions_)
+        && Component_fall::update(registry_, delta))
       {
-        Property_move::update(registry_, delta);
+        Component_move::update(registry_, delta);
         Spawner::spawn_animal(delta, *this);
         Spawner::spawn_god_demand(delta, *this);
       }
