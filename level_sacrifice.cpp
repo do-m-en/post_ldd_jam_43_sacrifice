@@ -87,8 +87,7 @@ struct Level_sacrifice::Spawner
     auto& animal_type = level.registry_.assign<Component_animal>(animal, type);
     material.set("animal_color", animal_type.color());
 
-    auto& transform = level.registry_.assign<Transform>(animal);
-    transform.get_position() = position;
+    level.registry_.assign<Transform>(animal, position);
     level.registry_.assign<Parent>(animal, animal);
     level.registry_.assign<Component_move>(animal, Move_direction::Left);
     level.registry_.assign<collider::Oriented_bounding_box>(animal, cxx_gd::primitive::rectangle_triangle_strip_3_);
@@ -115,7 +114,7 @@ struct Level_sacrifice::Spawner
           auto t = (transform.get_position().z - point_1.z)/ray_direction.z;
           auto point_2 = point_1 + t * ray_direction;
 
-          transform.get_position() = point_2;
+          transform.edit().place(std::move(point_2));
 
           bool is_god_demand = level.registry_.has<Component_god_demand>(level.caught_entity_.value());
           if(is_god_demand)
@@ -173,7 +172,7 @@ struct Level_sacrifice::Spawner
             else
             {
               auto& transform = level.registry_.get<Transform>(picked_entity.value());
-              transform.get_position().z = transform.get_position().z + 1;
+              transform.edit().move({0.f, 0.f, 1.f});
             }
 
             level.caught_entity_ = picked_entity;
@@ -253,10 +252,7 @@ struct Level_sacrifice::Spawner
     level.registry_.assign<std::reference_wrapper<Mesh>>(background, level.meshes_[0]);
     level.registry_.assign<Material>(background, &level.shaders_[2], std::move(std::vector{&level.textures_[1]}));
     level.registry_.assign<Parent>(background, background);
-    auto& transform = level.registry_.assign<Transform>(background);
-    transform.get_scale().x = 20.f;
-    transform.get_scale().y = 15.f;
-    transform.get_position().z = -1.f;
+    level.registry_.assign<Transform>(background, glm::vec3{0.f, 0.f, -1.f}, glm::vec3{20.f, 15.f, 1.f});
   }
 
   static void spawn_gigant_god_mouth(Level_sacrifice& level)
@@ -264,8 +260,7 @@ struct Level_sacrifice::Spawner
     auto gigant_mouth = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(gigant_mouth, level.meshes_[2]);
     auto& material = level.registry_.assign<Material>(gigant_mouth, &level.shaders_[0], std::move(std::vector{&level.textures_[2]}));
-    auto& transform = level.registry_.assign<Transform>(gigant_mouth);
-    transform.get_position() = glm::vec3{0.f, 10.f, 0.f};
+    level.registry_.assign<Transform>(gigant_mouth, glm::vec3{0.f, 10.f, 0.f});
     level.registry_.assign<Parent>(gigant_mouth, gigant_mouth);
     level.registry_.assign<Component_god_mouth>(gigant_mouth, material);
 
@@ -287,8 +282,7 @@ struct Level_sacrifice::Spawner
     level.registry_.assign<std::reference_wrapper<Mesh>>(house, level.meshes_[0]);
     auto& material = level.registry_.assign<Material>(house, &level.shaders_[0], std::move(std::vector{&level.textures_[5]}));
     material.set("layer", 1);
-    auto& transform = level.registry_.assign<Transform>(house);
-    transform.get_position() = position;
+    level.registry_.assign<Transform>(house, position);
     level.registry_.assign<Parent>(house, house);
     level.registry_.assign<Component_life>(house);
   }
@@ -298,8 +292,7 @@ struct Level_sacrifice::Spawner
     auto conversion_machine = level.registry_.create();
     level.registry_.assign<std::reference_wrapper<Mesh>>(conversion_machine, level.meshes_[1]);
     auto& material = level.registry_.assign<Material>(conversion_machine, &level.shaders_[4], std::move(std::vector{&level.textures_[4]}));
-    auto& transform = level.registry_.assign<Transform>(conversion_machine);
-    transform.get_position() = position;
+    level.registry_.assign<Transform>(conversion_machine, position);
     level.registry_.assign<Parent>(conversion_machine, conversion_machine);
     level.registry_.assign<Component_conversion_machine>(conversion_machine, material);
 
@@ -359,8 +352,7 @@ struct Level_sacrifice::Spawner
         level.registry_.assign<std::reference_wrapper<Mesh>>(demand, level.meshes_[0]);
         auto& material = level.registry_.assign<Material>(demand, &level.shaders_[3], std::move(std::vector{&level.textures_[3]}));
         level.registry_.assign<Parent>(demand, demand);
-        auto& transform = level.registry_.assign<Transform>(demand);
-        transform.get_position() = glm::vec3{item->second, random_offset(level.random_engine_) + 10.f, 0.f};
+        level.registry_.assign<Transform>(demand, glm::vec3{item->second, random_offset(level.random_engine_) + 10.f, 0.f});
         level.registry_.assign<Component_god_demand>(demand, std::move(demand_colors), material, static_cast<int>(item->second));
 
         constexpr std::array<glm::vec3, 4> rectangle_triangle_strip_3_large = {{
@@ -402,12 +394,13 @@ struct Level_sacrifice::Spawner
       auto& animal_type = level.registry_.assign<Component_animal>(animal, static_cast<Animal_type>(random_type(level.random_engine_)));
       material.set("animal_color", animal_type.color());
 
-      auto& transform = level.registry_.assign<Transform>(animal);
-      transform.get_position() =
+      level.registry_.assign<Transform>(
+          animal,
           glm::vec3{
             direction == Move_direction::Left ? 20.f : -20.f,
             random_y_position(level.random_engine_),
-            0.f};
+            0.f}
+        );
       level.registry_.assign<Parent>(animal, animal);
       level.registry_.assign<Component_move>(animal, Component_move(direction));
       level.registry_.assign<collider::Oriented_bounding_box>(animal, cxx_gd::primitive::rectangle_triangle_strip_3_);

@@ -13,7 +13,12 @@ bool Component_fall::update(entt::Registry<std::uint32_t>& registry, std::chrono
   for(auto entity : view)
   {
     auto& transform = view.get<Transform>(entity);
-    transform.get_position().y = transform.get_position().y - 10.f * delta.count();
+    transform.edit().move(
+      glm::vec3{
+          0.f
+        , -(10.f * delta.count())
+        , 0.f
+      });
 
     if(transform.get_position().y < -20.f)
     {

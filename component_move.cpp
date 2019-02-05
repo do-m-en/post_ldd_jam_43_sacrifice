@@ -14,9 +14,12 @@ void Component_move::update(entt::Registry<std::uint32_t>& registry, std::chrono
     auto& transform = view.get<Transform>(entity);
     auto& move = view.get<Component_move>(entity);
     auto start_position_x = transform.get_position().x;
-    transform.get_position().x =
-        transform.get_position().x
-      + (5.f * static_cast<int>(move.direction_) * delta.count());
+    transform.edit().move(
+      glm::vec3{
+          (5.f * static_cast<int>(move.direction_) * delta.count())
+        , 0.f
+        , 0.f
+      });
 
     if(move.direction_ == Move_direction::Left && transform.get_position().x < -20)
       registry.destroy(entity);

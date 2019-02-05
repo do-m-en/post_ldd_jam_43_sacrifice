@@ -37,7 +37,7 @@ Game_over::Game_over(
   auto game_over_entity = registry_.create();
   registry_.assign<std::reference_wrapper<Mesh>>(game_over_entity, mesh_);
   auto& material = registry_.assign<Material>(game_over_entity, &shader_, std::move(std::vector{&texture_}));
-  registry_.assign<Transform>(game_over_entity).get_position().z = 3.f;
+  registry_.assign<Transform>(game_over_entity, glm::vec3{0.f, 0.f, 3.f});
   registry_.assign<Parent>(game_over_entity, game_over_entity);
 }
 
