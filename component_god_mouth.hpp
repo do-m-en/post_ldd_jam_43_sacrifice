@@ -17,7 +17,7 @@ namespace cxx_gd
   {
   public:
     using Mouth =
-      Entity<
+      Entity_view<
           Component_god_mouth
         , Material
       >;
@@ -53,7 +53,7 @@ namespace cxx_gd
 
     static void on_collision( // TODO collision?
       Mouth mouth,
-      Empty_Entity other,
+      Empty_entity_span other,
       Shared_collision_object& collision_object)
     {
       other.destroy();

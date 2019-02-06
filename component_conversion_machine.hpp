@@ -15,13 +15,13 @@ namespace cxx_gd
   {
   public:
     using Machine =
-      Entity<
+      Entity_view<
           Component_conversion_machine
         , Material
         , Transform
       >;
 
-    using Animal = Modifiable_Entity<Component_animal&>;
+    using Animal = Entity_span<Component_animal&>;
 
     static void on_collision(
       Machine machine,

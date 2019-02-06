@@ -79,7 +79,7 @@ struct Level_sacrifice::Spawner
 {
   static void spawn_animal_token(Level_sacrifice& level, Animal_type type, glm::vec3 const& position)
   {
-    Empty_Entity animal{level.registry_};
+    Empty_entity_span animal{level.registry_};
     animal.assign<std::reference_wrapper<Mesh>>(level.meshes_[0]);
     auto& material = animal.assign<Material>(&level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
     material.set("orientation_x", -1);
@@ -248,7 +248,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_background(Level_sacrifice& level)
   {
-    Empty_Entity background{level.registry_};
+    Empty_entity_span background{level.registry_};
     background.assign<std::reference_wrapper<Mesh>>(level.meshes_[0]);
     background.assign<Material>(&level.shaders_[2], std::move(std::vector{&level.textures_[1]}));
     background.assign<Parent>(background.id());
@@ -257,7 +257,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_gigant_god_mouth(Level_sacrifice& level)
   {
-    Empty_Entity gigant_mouth{level.registry_};
+    Empty_entity_span gigant_mouth{level.registry_};
     gigant_mouth.assign<std::reference_wrapper<Mesh>>(level.meshes_[2]);
     auto& material = gigant_mouth.assign<Material>(&level.shaders_[0], std::move(std::vector{&level.textures_[2]}));
     gigant_mouth.assign<Transform>(glm::vec3{0.f, 10.f, 0.f});
@@ -278,7 +278,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_house(Level_sacrifice& level, glm::vec3 const& position)
   {
-    Empty_Entity house{level.registry_};
+    Empty_entity_span house{level.registry_};
     house.assign<std::reference_wrapper<Mesh>>(level.meshes_[0]);
     auto& material = house.assign<Material>(&level.shaders_[0], std::move(std::vector{&level.textures_[5]}));
     material.set("layer", 1);
@@ -289,7 +289,7 @@ struct Level_sacrifice::Spawner
 
   static void spawn_conversion_machine(Level_sacrifice& level, glm::vec3 const& position)
   {
-    Empty_Entity conversion_machine{level.registry_};
+    Empty_entity_span conversion_machine{level.registry_};
     conversion_machine.assign<std::reference_wrapper<Mesh>>(level.meshes_[1]);
     auto& material = conversion_machine.assign<Material>(&level.shaders_[4], std::move(std::vector{&level.textures_[4]}));
     conversion_machine.assign<Transform>(position);
@@ -348,7 +348,7 @@ struct Level_sacrifice::Spawner
             (number > (level.hardness_level_[0] + level.hardness_level_[1] + level.hardness_level_[2]) ? random_type(level.random_engine_) : 5)
           }};
 
-        Empty_Entity demand{level.registry_};
+        Empty_entity_span demand{level.registry_};
         demand.assign<std::reference_wrapper<Mesh>>(level.meshes_[0]);
         auto& material = demand.assign<Material>(&level.shaders_[3], std::move(std::vector{&level.textures_[3]}));
         demand.assign<Parent>(demand.id());
@@ -386,7 +386,7 @@ struct Level_sacrifice::Spawner
         ? Move_direction::Left
         : Move_direction::Right;
 
-      Empty_Entity animal{level.registry_};
+      Empty_entity_span animal{level.registry_};
       animal.assign<std::reference_wrapper<Mesh>>(level.meshes_[0]);
       auto& material = animal.assign<Material>(&level.shaders_[1], std::move(std::vector{&level.textures_[0]}));
       material.set("orientation_x", direction == Move_direction::Left ? -1 : 1);

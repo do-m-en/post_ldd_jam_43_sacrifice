@@ -35,12 +35,12 @@ namespace cxx_gd
     };
 
     using Demand =
-      Modifiable_Entity<
+      Entity_span<
           Component_god_demand
         , Material
       >;
 
-    using Animal = Modifiable_Entity<Component_animal>;
+    using Animal = Entity_span<Component_animal>;
 
     // TODO anoying dependencies... consider how this could be split so that each property handles its own part (and that level state doesn't leak here...)
     static void on_collision(
